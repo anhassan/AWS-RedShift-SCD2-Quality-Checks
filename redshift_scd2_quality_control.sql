@@ -2,9 +2,10 @@
 DROP TABLE IF EXISTS user_address_dim;
 
 
--- Creating the dimensional to store user addresses
+-- Creating the dimension to store user addresses
 CREATE TEMP TABLE user_address_dim (
     address VARCHAR(256),
+    constant_field VARCHAR(256),
     bus_eff_dt DATE,
     bus_exp_dt DATE
 );
@@ -12,13 +13,13 @@ CREATE TEMP TABLE user_address_dim (
 
 -- Populating the data for SCD 2 into user address dimension
 INSERT INTO user_address_dim VALUES
-('A','2022-11-03','2023-03-03'),
-('A', '2023-01-01','2023-07-22'),
-('A','2023-07-28','9999-12-31'),
-('B', '2023-04-01','2023-08-01'),
-('B', '2023-08-01','2024-01-31'),
-('B', '2024-01-31','9999-12-31'),
-('C', '2022-12-01','9999-12-31');
+('A','CNST','2022-11-03','2023-03-03'),
+('A','CNST','2023-01-01','2023-07-22'),
+('A','CNST','2023-07-28','9999-12-31'),
+('B','CNST','2023-04-01','2023-08-01'),
+('B','CNST','2023-08-01','2024-01-31'),
+('B','CNST','2024-01-31','9999-12-31'),
+('C','CNST','2022-12-01','9999-12-31');
 
 
 -- Querying the data in user address dimension
@@ -26,11 +27,17 @@ SELECT * FROM user_address_dim order by address,bus_eff_dt;
 
 
 -- Finding the faulty SCD 2 addresses
-with 
+with filtered_data as (
+    select 
+         address
+        ,bus_eff_dt
+        ,bus_exp_dt
+    from user_address_dim
+),
 lag_dt_data as (
     select *,
         lag(bus_exp_dt,1) over(order by address,bus_eff_dt,bus_exp_dt) as lag_dt 
-    from user_address_dim order by bus_eff_dt,bus_exp_dt
+    from filtered_data order by bus_eff_dt,bus_exp_dt
 ),
 scd_diff_data as (
     select *
@@ -55,11 +62,17 @@ AS $$
 BEGIN
    EXECUTE 'drop table if exists ' || temp_table;
    EXECUTE 'create temp table ' || temp_table || ' as
-        with 
+         with filtered_data as (
+            select 
+                ' || key_name || '
+                ,bus_eff_dt
+                ,bus_exp_dt
+            from ' || table_name || '
+        ), 
         lag_dt_data as (
             select *,
                 lag(bus_exp_dt,1) over(order by ' || key_name || ',bus_eff_dt,bus_exp_dt) as lag_dt 
-            from ' || table_name || ' order by bus_eff_dt,bus_exp_dt
+            from filtered_data order by bus_eff_dt,bus_exp_dt
         ),
         scd_diff_data as (
             select *
@@ -92,9 +105,10 @@ SELECT * FROM scd_diff_table;
 DROP TABLE IF EXISTS user_contact_dim;
 
 
--- Creating the dimensional to store user contacts
+-- Creating the dimension to store user contacts
 CREATE TEMP TABLE user_contact_dim (
     contact VARCHAR(256),
+     constant_field VARCHAR(256),
     bus_eff_dt DATE,
     bus_exp_dt DATE
 );
@@ -102,14 +116,13 @@ CREATE TEMP TABLE user_contact_dim (
 
 -- Populating the data for SCD 2 into user address dimension
 INSERT INTO user_contact_dim VALUES
-('A','2022-11-03','2023-03-03'),
-('A', '2023-01-01','2023-07-22'),
-('A','2023-07-28','9999-12-31'),
-('B', '2023-04-01','2023-08-01'),
-('B', '2023-08-11','2024-01-31'),
-('B', '2024-01-31','9999-12-31'),
-('C', '2022-12-01','9999-12-31');
-
+('A','CNST','2022-11-03','2023-03-03'),
+('A','CNST','2023-01-01','2023-07-22'),
+('A','CNST','2023-07-28','9999-12-31'),
+('B','CNST','2023-04-01','2023-08-01'),
+('B','CNST','2023-08-11','2024-01-31'),
+('B','CNST','2024-01-31','9999-12-31'),
+('C','CNST','2022-12-01','9999-12-31');
 
 -- Querying the data in user address dimension
 SELECT * FROM user_contact_dim order by contact,bus_eff_dt;
@@ -132,3 +145,4 @@ DROP TABLE IF EXISTS user_contact_dim;
 DROP TABLE IF EXISTS scd_diff_address_table;
 DROP TABLE IF EXISTS scd_diff_contact_table;
 DROP PROCEDURE sp_check_table_scd_mismatches;
+
