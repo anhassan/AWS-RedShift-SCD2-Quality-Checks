@@ -108,7 +108,7 @@ DROP TABLE IF EXISTS user_contact_dim;
 -- Creating the dimension to store user contacts
 CREATE TEMP TABLE user_contact_dim (
     contact VARCHAR(256),
-     constant_field VARCHAR(256),
+    constant_field VARCHAR(256),
     bus_eff_dt DATE,
     bus_exp_dt DATE
 );
