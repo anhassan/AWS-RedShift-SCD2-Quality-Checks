@@ -124,6 +124,7 @@ INSERT INTO user_contact_dim VALUES
 ('B','CNST','2024-01-31','9999-12-31'),
 ('C','CNST','2022-12-01','9999-12-31');
 
+
 -- Querying the data in user address dimension
 SELECT * FROM user_contact_dim order by contact,bus_eff_dt;
 
